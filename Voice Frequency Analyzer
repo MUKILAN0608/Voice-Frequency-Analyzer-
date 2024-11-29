@@ -1,0 +1,111 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Voice Analyzer</title>
+  <style>
+    
+    .container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+    }
+    .output {
+      font-weight: bold;
+    }
+    button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body style="background-color:gold;"
+  <div class="container">
+    <h1>Voice Analyzer</h1>
+    <p>SPEAK OUT </p>
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop Recording</button>
+    <div class="output"></div>
+    <canvas id="visualizer" width="600" height="200"></canvas>
+  </div>
+  <script>
+    let audioContext;
+    let analyser;
+    let microphone;
+    let canvasCtx;
+    function startRecording() {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+          microphone = audioContext.createMediaStreamSource(stream);
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 2048;
+          microphone.connect(analyser);
+          visualize();
+        })
+        .catch(function(err) {
+          console.error('Error accessing microphone:', err);
+        });
+    }
+    function stopRecording() {
+      if (microphone) {
+        microphone.disconnect();
+        analyser.disconnect();
+        audioContext.close();
+      }
+    }
+    function visualize() {
+      const canvas = document.getElementById('visualizer');
+      canvasCtx = canvas.getContext('2d');
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      const WIDTH = canvas.width;
+      const HEIGHT = canvas.height;
+      canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+      function draw() {
+        const drawVisual = requestAnimationFrame(draw);
+        
+        analyser.getByteFrequencyData(dataArray);
+        canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+        const barWidth = (WIDTH / bufferLength) * 2.5;
+        let x = 0;
+        for(let i = 0; i < bufferLength; i++) {
+          const barHeight = dataArray[i] / 2;
+          canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+          canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight);
+          x += barWidth + 1;
+        }
+        // Display frequency and amplitude values
+        const freqValue = getFrequencyValue(dataArray);
+        const ampValue = getAmplitudeValue(dataArray);
+        displayValues(freqValue, ampValue);
+      };
+      draw();
+    }
+    function getFrequencyValue(dataArray) {
+      const sampleRate = audioContext.sampleRate;
+      const binSize = sampleRate / analyser.fftSize;
+      const maxIndex = dataArray.indexOf(Math.max(...dataArray));
+      return Math.round(binSize * maxIndex);
+    }
+    function getAmplitudeValue(dataArray) {
+      const maxValue = Math.max(...dataArray);
+      return maxValue;
+    }
+    function displayValues(frequency, amplitude) {
+      const outputDiv = document.querySelector('.output');
+      outputDiv.textContent = `Frequency: ${frequency} Hz, Amplitude: ${amplitude}`;
+    }
+  </script>
+</body>
+</html>
+      };
+      
+    }
+  </script>
+</body>
+</html>
